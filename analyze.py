@@ -98,57 +98,6 @@ def load_accounts(directory, investment_attributes):
     return accounts
 
 
-def preprocess(df):
-    # Clean up Schwab csv
-    df = df.iloc[1:]  # Remove the first row which contains the account info
-    df.columns = df.iloc[0]  # Set the second row as column names
-    df = df[1:]  # Remove the row that became column names
-    df = df.reset_index(drop=True)
-    df = df.dropna(axis=1, how='all')
-    df = df.dropna(how='all')
-    df.drop(df.tail(2).index, inplace=True)  # drop last two rows with account + cash totals
-
-    # Define new column names
-    new_column_names = {
-        'Symbol': 'symbol',
-        'Description': 'description',
-        'Qty (Quantity)': 'quantity',
-        'Price': 'price',
-        'Price Chng % (Price Change %)': 'price_change_pct',
-        'Price Chng $ (Price Change $)': 'price_change_usd',
-        'Mkt Val (Market Value)': 'market_value',
-        'Day Chng % (Day Change %)': 'day_change_pct',
-        'Day Chng $ (Day Change $)': 'day_change_usd',
-        'Cost Basis': 'cost_basis',
-        'Gain $ (Gain/Loss $)': 'gain_loss_usd',
-        'Gain % (Gain/Loss %)': 'gain_loss_pct',
-        'Ratings': 'ratings',
-        'Reinvest?': 'reinvest',
-        'Reinvest Capital Gains?': 'reinvest_capital_gains',
-        '% of Acct (% of Account)': 'pct_of_account',
-        'Security Type': 'security_type'
-    }
-
-    # Rename columns
-    df = df.rename(columns=new_column_names)
-
-    # Convert numeric columns
-    numeric_columns = ['quantity', 'price', 'price_change_pct', 'price_change_usd', 'market_value',
-                       'day_change_pct', 'day_change_usd', 'cost_basis', 'gain_loss_usd',
-                       'gain_loss_pct', 'pct_of_account']
-
-    for col in numeric_columns:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col].str.replace('$', '').str.replace('%', ''), errors='coerce')
-
-    # Convert boolean columns
-    boolean_columns = ['reinvest', 'reinvest_capital_gains']
-    for col in boolean_columns:
-        if col in df.columns:
-            df[col] = df[col].map({'Yes': True, 'No': False})
-
-    return df
-
 def analyze_account(df):
     total_value = df['market_value'].sum()
     account_summary = df.groupby('symbol').agg({
