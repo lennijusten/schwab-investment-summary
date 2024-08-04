@@ -16,7 +16,7 @@ def determine_account_type(filename):
         return 'Traditional IRA'
     elif 'Roth_Contributory_IRA' in filename:
         return 'Roth IRA'
-    elif 'Individual' in filename and 'brokerage' in filename:
+    elif 'Individual' in filename:
         return 'Brokerage'
     else:
         return 'Unknown'
