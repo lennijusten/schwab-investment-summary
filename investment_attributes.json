@@ -1,0 +1,44 @@
+{
+    "SWTSX": {
+        "name": "SCHWAB TOTAL STOCK MARKET INDEX",
+        "category": "Total US Stock Market",
+        "risk_score": 3,
+        "sector": "Broad Market",
+        "asset_class": "stock"
+    },
+    "SWISX": {
+        "name": "SCHWAB INTERNATIONAL INDEX",
+        "category": "International (non-US) Stock Market",
+        "risk_score": 4,
+        "sector": "International",
+        "asset_class": "stock"
+    },
+    "SWYNX": {
+        "name": "SCHWAB TARGET 2060 INDEX",
+        "category": "2060 Managed Fund",
+        "risk_score": 2,
+        "sector": "Target Date",
+        "asset_class": "stock"
+    },
+    "SMH": {
+        "name": "VANECK SEMICONDUCTOR ETF",
+        "category": "Semiconductor ETF",
+        "risk_score": 5,
+        "sector": "Technology",
+        "asset_class": "stock"
+    },
+    "SWPPX": {
+        "name": "SCHWAB S&P 500 INDEX",
+        "category": "S&P 500 Index",
+        "risk_score": 4,
+        "sector": "Broad Market",
+        "asset_class": "stock"
+    },
+    "QQQ": {
+        "name": "INVSC QQQ TRUST SRS 1 ETF",
+        "category": "NASDAQ 100 ETF",
+        "risk_score": 4,
+        "sector": "Technology",
+        "asset_class": "stock"
+    }
+}
