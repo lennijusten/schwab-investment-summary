@@ -122,7 +122,7 @@ def analyze_account(df):
     account_summary = account_summary.sort_values('percentage', ascending=False)
     return account_summary
 
-def analyze_all_accounts(accounts):
+def analyze_all_accounts(accounts, investment_breakdown):
     all_investments = pd.concat([df for df in accounts.values()])
     total_value = all_investments['market_value'].sum()
     overall_summary = all_investments.groupby('symbol').agg({
@@ -132,6 +132,14 @@ def analyze_all_accounts(accounts):
         'asset_class': 'first'
     }).reset_index()
     overall_summary['percentage'] = overall_summary['market_value'] / total_value * 100
+    
+    # Add columns for each account type
+    account_types = ['Roth IRA', 'Traditional IRA', 'Brokerage']
+    for account_type in account_types:
+        overall_summary[f'{account_type}_value'] = overall_summary['symbol'].map(
+            lambda x: investment_breakdown[x]['accounts'].get(account_type, (0, 0))[0]
+        )
+    
     overall_summary = overall_summary.sort_values('percentage', ascending=False)
     return overall_summary
 
@@ -208,12 +216,16 @@ def main():
         for account_type, (value, fraction) in data['accounts'].items():
             print(f"  {account_type}: ${value:,.2f} ({fraction:.2%})")
 
-
     # Analyze all accounts together
-    overall_summary = analyze_all_accounts(accounts)
+    overall_summary = analyze_all_accounts(accounts, investment_breakdown)
     print("\nOverall Investment Summary:")
-    print(overall_summary[['symbol', 'description', 'market_value', 'percentage', 'category', 'asset_class']])
+    columns_to_display = ['symbol', 'description', 'market_value', 'percentage', 'category', 'asset_class',
+                          'Roth IRA_value', 'Traditional IRA_value', 'Brokerage_value']
+    
+    print(overall_summary[columns_to_display].to_string(index=False))
+
     # plot_account_composition(overall_summary, "Overall Investment Composition")
+
 
 if __name__ == "__main__":
     main()
