@@ -6,11 +6,20 @@ import numpy as np
 import warnings
 import matplotlib.pyplot as plt
 
-
+# File loading and preprocessing functions
 def load_investment_attributes(file_path='investment_attributes.json'):
     with open(file_path, 'r') as f:
         return json.load(f)
 
+def determine_account_type(filename):
+    if 'Contributory_IRA' in filename and 'Roth' not in filename:
+        return 'Traditional IRA'
+    elif 'Roth_Contributory_IRA' in filename:
+        return 'Roth IRA'
+    elif 'Individual' in filename and 'brokerage' in filename:
+        return 'Brokerage'
+    else:
+        return 'Unknown'
 
 def preprocess(df):
     # Clean up Schwab csv
@@ -63,7 +72,6 @@ def preprocess(df):
 
     return df
 
-
 def expand_dataframe(df, investment_attributes):
     unknown_symbols = set()
 
@@ -84,7 +92,6 @@ def expand_dataframe(df, investment_attributes):
 
     return df
 
-
 def load_accounts(directory, investment_attributes):
     accounts = {}
     for file in os.listdir(directory):
@@ -94,10 +101,15 @@ def load_accounts(directory, investment_attributes):
             df = pd.read_csv(file_path)
             df = preprocess(df)
             df = expand_dataframe(df, investment_attributes)
+            
+            # Determine account type from filename
+            account_type = determine_account_type(file)
+            df['account_type'] = account_type
+            
             accounts[account_name] = df
     return accounts
 
-
+# Analysis functions
 def analyze_account(df):
     total_value = df['market_value'].sum()
     account_summary = df.groupby('symbol').agg({
@@ -109,7 +121,6 @@ def analyze_account(df):
     account_summary['percentage'] = account_summary['market_value'] / total_value * 100
     account_summary = account_summary.sort_values('percentage', ascending=False)
     return account_summary
-
 
 def analyze_all_accounts(accounts):
     all_investments = pd.concat([df for df in accounts.values()])
@@ -124,7 +135,41 @@ def analyze_all_accounts(accounts):
     overall_summary = overall_summary.sort_values('percentage', ascending=False)
     return overall_summary
 
+def analyze_account_types(accounts):
+    account_type_totals = {}
+    for df in accounts.values():
+        account_type = df['account_type'].iloc[0]
+        total = df['market_value'].sum()
+        if account_type in account_type_totals:
+            account_type_totals[account_type] += total
+        else:
+            account_type_totals[account_type] = total
+    return account_type_totals
 
+def analyze_investments_across_accounts(accounts):
+    investment_breakdown = {}
+    for df in accounts.values():
+        account_type = df['account_type'].iloc[0]
+        for _, row in df.iterrows():
+            symbol = row['symbol']
+            value = row['market_value']
+            if symbol not in investment_breakdown:
+                investment_breakdown[symbol] = {}
+            if account_type not in investment_breakdown[symbol]:
+                investment_breakdown[symbol][account_type] = 0
+            investment_breakdown[symbol][account_type] += value
+    
+    # Calculate total value and fractions for each symbol
+    for symbol in investment_breakdown:
+        total_value = sum(investment_breakdown[symbol].values())
+        for account_type in investment_breakdown[symbol]:
+            value = investment_breakdown[symbol][account_type]
+            fraction = value / total_value
+            investment_breakdown[symbol][account_type] = (value, fraction)
+    
+    return investment_breakdown
+
+# Visualization function
 def plot_account_composition(summary, title):
     plt.figure(figsize=(10, 6))
     plt.pie(summary['percentage'], labels=summary['symbol'], autopct='%1.1f%%')
@@ -132,7 +177,7 @@ def plot_account_composition(summary, title):
     plt.axis('equal')
     plt.show()
 
-
+# Main function
 def main():
     investment_attributes = load_investment_attributes()
 
@@ -148,12 +193,25 @@ def main():
 
         print("\n" + "=" * 50)  # Separator between accounts
 
+    # Analyze account types
+    account_type_totals = analyze_account_types(accounts)
+    print("\nTotal Value by Account Type:")
+    for account_type, total in account_type_totals.items():
+        print(f"{account_type}: ${total:,.2f}")
+
+    # Analyze investments across account types
+    investment_breakdown = analyze_investments_across_accounts(accounts)
+    print("\nInvestment Breakdown Across Account Types:")
+    for symbol, breakdown in investment_breakdown.items():
+        print(f"\n{symbol}:")
+        for account_type, (value, fraction) in breakdown.items():
+            print(f"  {account_type}: ${value:,.2f} ({fraction:.2%})")
+
     # Analyze all accounts together
     overall_summary = analyze_all_accounts(accounts)
     print("\nOverall Investment Summary:")
     print(overall_summary[['symbol', 'description', 'market_value', 'percentage', 'category', 'asset_class']])
-    plot_account_composition(overall_summary, "Overall Investment Composition")
-    pass
+    # plot_account_composition(overall_summary, "Overall Investment Composition")
 
 if __name__ == "__main__":
     main()
