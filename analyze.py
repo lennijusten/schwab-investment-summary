@@ -152,20 +152,21 @@ def analyze_investments_across_accounts(accounts):
         account_type = df['account_type'].iloc[0]
         for _, row in df.iterrows():
             symbol = row['symbol']
+            description = row['description']
             value = row['market_value']
             if symbol not in investment_breakdown:
-                investment_breakdown[symbol] = {}
-            if account_type not in investment_breakdown[symbol]:
-                investment_breakdown[symbol][account_type] = 0
-            investment_breakdown[symbol][account_type] += value
+                investment_breakdown[symbol] = {'description': description, 'accounts': {}}
+            if account_type not in investment_breakdown[symbol]['accounts']:
+                investment_breakdown[symbol]['accounts'][account_type] = 0
+            investment_breakdown[symbol]['accounts'][account_type] += value
     
     # Calculate total value and fractions for each symbol
     for symbol in investment_breakdown:
-        total_value = sum(investment_breakdown[symbol].values())
-        for account_type in investment_breakdown[symbol]:
-            value = investment_breakdown[symbol][account_type]
+        total_value = sum(investment_breakdown[symbol]['accounts'].values())
+        for account_type in investment_breakdown[symbol]['accounts']:
+            value = investment_breakdown[symbol]['accounts'][account_type]
             fraction = value / total_value
-            investment_breakdown[symbol][account_type] = (value, fraction)
+            investment_breakdown[symbol]['accounts'][account_type] = (value, fraction)
     
     return investment_breakdown
 
@@ -189,7 +190,7 @@ def main():
         print(f"\nAccount: {account_name}")
         account_summary = analyze_account(df)
         print(account_summary[['symbol', 'description', 'market_value', 'percentage', 'category', 'asset_class']])
-        plot_account_composition(account_summary, f"Account Composition: {account_name}")
+        # plot_account_composition(account_summary, f"Account Composition: {account_name}")
 
         print("\n" + "=" * 50)  # Separator between accounts
 
@@ -202,10 +203,11 @@ def main():
     # Analyze investments across account types
     investment_breakdown = analyze_investments_across_accounts(accounts)
     print("\nInvestment Breakdown Across Account Types:")
-    for symbol, breakdown in investment_breakdown.items():
-        print(f"\n{symbol}:")
-        for account_type, (value, fraction) in breakdown.items():
+    for symbol, data in investment_breakdown.items():
+        print(f"\n{data['description']} ({symbol}):")
+        for account_type, (value, fraction) in data['accounts'].items():
             print(f"  {account_type}: ${value:,.2f} ({fraction:.2%})")
+
 
     # Analyze all accounts together
     overall_summary = analyze_all_accounts(accounts)
